@@ -33,7 +33,6 @@ xwinwrap -fs -fdt -ni -b -nf -ov -- mpv --input-ipc-server=/tmp/mpvsocket --no-a
 ## alternative to --input-ipc-server is with xdotool to send p key
 # xdotool key --window "$(xdotool search --class mpv)" p
 if [ $alwaysRun == true ]; then
-    echo "Done"
     sleep 1
     echo '{"command": ["cycle", "pause"]}' | socat - /tmp/mpvsocket
 else

@@ -11,8 +11,8 @@ do
         video=video
         ;;
       "p")
-        echo $OPTARG
-        video=$OPTARG
+        echo $OPTARG > log.out
+        video='~/Pictures/video/2233\ 新年.mp4'
         ;;
       ":")
         echo "No argument value for option $OPTARG"
@@ -28,7 +28,7 @@ done
 ## kill and start video background
 killall xwinwrap
 while pgrep -u $UID -x xwinwrap >/dev/null; do sleep 1; done
-xwinwrap -fs -fdt -ni -b -nf -ov -- mpv --input-ipc-server=/tmp/mpvsocket --no-audio --loop --pause -wid WID $video &
+xwinwrap -fs -fdt -ni -b -nf -ov -- mpv --input-ipc-server=/tmp/mpvsocket --no-audio --loop --pause -wid WID ${video} &
 ## logic for pausing and playing based on window focus and state
 ## alternative to --input-ipc-server is with xdotool to send p key
 # xdotool key --window "$(xdotool search --class mpv)" p

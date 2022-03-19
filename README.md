@@ -1,8 +1,17 @@
 # i3-video-wallpaper
+Play dynamic wallpapers in i3wm (using XWinWrap and MPV).
 
-requires xwinwrap-git from AUR, xdotool, mpv
+Support pausing the video when a window other than the desktop is focused
 
-support pausing the video when a window other than the desktop is focused
+## Dependencies
+- xwinwrap-git (AUR)
+- xdotool
+- mpv
+
+## Optional Dependencies
+- ffmpeg (to generate thumbnail)
+- feh (to set wallpaper)
+- imagemagick (to blur the generated thumbnail)
 
 ## Basic Usage
 ```bash

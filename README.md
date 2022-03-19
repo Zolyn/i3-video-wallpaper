@@ -14,6 +14,11 @@ $ ./setup.sh -h
 Options:
         -a: Always run video wallpaper.
         -p: Path to video.
+        -n: Generate a thumbnail by using ffmpeg. It may be useful if you use the built-in system tray of Polybar. (This can fix the background of system tray)
+        -w: Set the generated thumbnail as wallpaper by using feh. It may be useful if you use the built-in system tray of Polybar. (This can fix the background of system tray)
+        -f: Parameter which is passed to "feh --bg-[paramater]". Available options: center|fill|max|scale|tile (Default: center)
+        -d: Where the thumbnails is stored. (Default: $HOME/Pictures/i3-video-wallpaper)
+        -t: The time to generate the thumbnail. (Default: 00:00:01) 
         -h: Display this text.
 ```
 

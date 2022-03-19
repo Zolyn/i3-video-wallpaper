@@ -1,7 +1,14 @@
 #!/bin/bash
 alwaysRun=false
 video=''
-while getopts ":ap:h" arg
+generateThumbnail=false
+setWallpaper=false
+fit="center"
+thumbnailStorePath="$HOME/Pictures/i3-video-wallpaper"
+thumbnailPath=""
+timeStamp='00:00:01'
+
+while getopts ":ap:nwf:d:t:h" arg
 do
     case "$arg" in
       "a")
@@ -10,11 +17,31 @@ do
       "p")
         video=$OPTARG
         ;;
+      "n")
+        generateThumbnail=true
+        ;;
+      "w")
+        setWallpaper=true
+        ;;
+      "f")
+        fit=$OPTARG
+        ;;
+      "d")
+        thumbnailStorePath=$OPTARG
+        ;;
+      "t")
+        timeStamp=$OPTARG
+        ;;
       "h")
         cat << EOL
 Options:
         -a: Always run video wallpaper.
         -p: Path to video.
+        -n: Generate a thumbnail by using ffmpeg. It may be useful if you use the built-in system tray of Polybar. (This can fix the background of system tray)
+        -w: Set the generated thumbnail as wallpaper by using feh. It may be useful if you use the built-in system tray of Polybar. (This can fix the background of system tray)
+        -f: Parameter which is passed to "feh --bg-[paramater]". Available options: center|fill|max|scale|tile (Default: center)
+        -d: Where the thumbnails is stored. (Default: $HOME/Pictures/i3-video-wallpaper)
+        -t: The time to generate the thumbnail. (Default: 00:00:01) 
         -h: Display this text.
 
 EOL
@@ -60,6 +87,20 @@ run() {
   done
 }
 
+generate_thumbnail() {
+  thumbnailPath="$thumbnailStorePath/$(basename "$video" ".${video##*.}").png"
+
+  if [ ! -d "$thumbnailStorePath" ]; then
+    mkdir -p "$thumbnailStorePath"
+  fi
+
+  ffmpeg -i "$video" -y -f image2 -ss "$timeStamp" -vframes 1 "$thumbnailPath"
+
+  if [ $setWallpaper == true ]; then
+    feh "--bg-$fit" "$thumbnailPath"
+  fi
+}
+
 if [ ! -f "$video" ]; then
   echo "ERROR: The video path is empty."
   exit
@@ -69,4 +110,8 @@ if [ $alwaysRun == true ]; then
   run_always
 else
   run
+fi
+
+if [ $generateThumbnail == true ]; then
+  generate_thumbnail
 fi

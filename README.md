@@ -16,3 +16,6 @@ Options:
         -p: Path to video.
         -h: Display this text.
 ```
+
+## License
+[MIT](https://mit-license.org)

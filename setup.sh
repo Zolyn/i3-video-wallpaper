@@ -72,7 +72,7 @@ EOL
 done
 
 run_always() {
-  ## kill and start video background
+  # kill and start video background
   killall xwinwrap
   sleep 1
   xwinwrap -fs -fdt -ni -b -nf -ov -- mpv --input-ipc-server=/tmp/mpvsocket --no-audio --loop -wid WID "$video" &
@@ -80,7 +80,7 @@ run_always() {
 
 run() {
   PLAY=false
-  # ## kill and start video background
+  # kill and start video background
   killall xwinwrap
   sleep 1
   xwinwrap -fs -fdt -ni -b -nf -ov -- mpv --input-ipc-server=/tmp/mpvsocket --no-audio --pause --loop -wid WID "$video" &

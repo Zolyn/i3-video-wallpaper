@@ -35,3 +35,6 @@ Options:
 
 ## License
 [MIT](https://mit-license.org)
+
+## References
+- [How to get an animated background on linux like mine and understanding PID files.](https://www.youtube.com/watch?v=b8rh9m3wOjk&list=PLRtT6Oib2tb2HrWb3gfUWdE4S21802mVF&index=1&t=901s)

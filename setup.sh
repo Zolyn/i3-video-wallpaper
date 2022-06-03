@@ -5,10 +5,14 @@ generateThumbnail=false
 setWallpaper=false
 blur=false
 blurGeometry='16x16'
-fit="center"
+fit="fill"
 thumbnailStorePath="$HOME/Pictures/i3-video-wallpaper"
 thumbnailPath=""
 timeStamp='00:00:01'
+
+PIDFILE="/var/run/user/$UID/vwp.pid"
+
+declare -a PIDs
 
 while getopts ":ap:nwbg:f:d:t:h" arg
 do
@@ -49,7 +53,7 @@ Options:
         -w: Set the generated thumbnail as wallpaper by using feh. It may be useful if you use the built-in system tray of Polybar. (This can fix the background of system tray)
         -b: Blur the thumbnail. It may be useful if your compositor does not blur the background of the built-in system tray of Polybar.
         -g: Parameter which is passed to "convert -blur [parameter]". (Default: 16x16)
-        -f: Parameter which is passed to "feh --bg-[paramater]". Available options: center|fill|max|scale|tile (Default: center)
+        -f: Parameter which is passed to "feh --bg-[paramater]". Available options: center|fill|max|scale|tile (Default: fill)
         -d: Where the thumbnails is stored. (Default: $HOME/Pictures/i3-video-wallpaper)
         -t: The time to generate the thumbnail. (Default: 00:00:01) 
         -h: Display this text.
@@ -71,19 +75,25 @@ EOL
     esac
 done
 
+kill_xwinwrap() {
+  while read p; do
+    [[ $(ps -p "$p" -o comm=) == "xwinwrap" ]] && kill -9 "$p";
+  done < $PIDFILE
+  sleep 0.5
+}
+
+play() {
+  xwinwrap -ov -ni -g "$1" -- mpv --fs --loop-file --no-audio --no-osc --no-osd-bar -wid WID --no-input-default-bindings "$video" "$2" &
+  PIDs+=($!)
+}
+
 run_always() {
-  # kill and start video background
-  killall xwinwrap
-  sleep 1
-  xwinwrap -fs -fdt -ni -b -nf -ov -- mpv --input-ipc-server=/tmp/mpvsocket --no-audio --loop -wid WID "$video" &
+  play "$1"
 }
 
 run() {
   PLAY=false
-  # kill and start video background
-  killall xwinwrap
-  sleep 1
-  xwinwrap -fs -fdt -ni -b -nf -ov -- mpv --input-ipc-server=/tmp/mpvsocket --no-audio --pause --loop -wid WID "$video" &
+  play "$1" "--input-ipc-server=/tmp/mpvsocket --pause"
   while true;
   do
       if [ "$(xdotool getwindowfocus getwindowname)" == "i3" ] && [ $PLAY == false ]; then
@@ -93,7 +103,7 @@ run() {
               echo '{"command": ["cycle", "pause"]}' | socat - /tmp/mpvsocket
               PLAY=false
       fi
-      sleep 1
+      sleep 0.5
   done
 }
 
@@ -112,10 +122,6 @@ generate_thumbnail() {
     convert "$thumbnailPath" -blur "$blurGeometry" "$blurredThumbnailPath"
     thumbnailPath=$blurredThumbnailPath
   fi
-
-  if [ $setWallpaper == true ]; then
-    feh "--bg-$fit" "$thumbnailPath"
-  fi
 }
 
 if [ ! -f "$video" ]; then
@@ -123,12 +129,24 @@ if [ ! -f "$video" ]; then
   exit
 fi
 
-if [ $alwaysRun == true ]; then
-  run_always
-else
-  run
-fi
+kill_xwinwrap
+
+for g in $(xrandr -q | grep 'connected' | grep -oP '\d+x\d+\+\d+\+\d+'); do
+  if [ $alwaysRun == true ]; then
+    run_always "$g"
+  else
+    run "$g"
+  fi
+done
 
 if [ $generateThumbnail == true ]; then
   generate_thumbnail
 fi
+
+if [ $setWallpaper == true ]; then
+    feh "--bg-$fit" "$thumbnailPath"
+fi
+
+printf "%s\n" "${PIDs[@]}" > $PIDFILE
+
+echo "Done."

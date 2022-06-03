@@ -11,8 +11,10 @@ thumbnailPath=""
 timeStamp='00:00:01'
 
 PIDFILE="/var/run/user/$UID/vwp.pid"
+monitor_index=0
 
 declare -a PIDs
+declare -a MONITORs
 
 while getopts ":ap:nwbg:f:d:t:h" arg
 do
@@ -83,27 +85,18 @@ kill_xwinwrap() {
 }
 
 play() {
-  xwinwrap -ov -ni -g "$1" -- mpv --fs --loop-file --no-audio --no-osc --no-osd-bar -wid WID --no-input-default-bindings "$video" "$2" &
+  if [ $alwaysRun == true ]; then
+    xwinwrap -ov -ni -g "$1" -- mpv --fs --loop-file --no-audio --no-osc --no-osd-bar -wid WID --no-input-default-bindings "$video" &
+  else
+    isPlaying=false
+    xwinwrap -ov -ni -g "$1" -- mpv --fs --loop-file --input-ipc-server="/tmp/mpvsocket$monitor_index" --pause --no-audio --no-osc --no-osd-bar -wid WID --no-input-default-bindings "$video" &
+  fi
   PIDs+=($!)
 }
 
-run_always() {
-  play "$1"
-}
-
-run() {
-  PLAY=false
-  play "$1" "--input-ipc-server=/tmp/mpvsocket --pause"
-  while true;
-  do
-      if [ "$(xdotool getwindowfocus getwindowname)" == "i3" ] && [ $PLAY == false ]; then
-              echo '{"command": ["cycle", "pause"]}' | socat - /tmp/mpvsocket
-              PLAY=true
-      elif [ "$(xdotool getwindowfocus getwindowname)" != "i3" ] && [ $PLAY == true ]; then
-              echo '{"command": ["cycle", "pause"]}' | socat - /tmp/mpvsocket
-              PLAY=false
-      fi
-      sleep 0.5
+pause_video() {
+  for m in "${MONITORs[@]}"; do
+        echo '{"command": ["cycle", "pause"]}' | socat - "/tmp/mpvsocket$m"
   done
 }
 
@@ -132,11 +125,9 @@ fi
 kill_xwinwrap
 
 for g in $(xrandr -q | grep 'connected' | grep -oP '\d+x\d+\+\d+\+\d+'); do
-  if [ $alwaysRun == true ]; then
-    run_always "$g"
-  else
-    run "$g"
-  fi
+  ((monitor_index++))
+  MONITORs+=("$monitor_index")
+  play "$g"
 done
 
 if [ $generateThumbnail == true ]; then
@@ -149,4 +140,16 @@ fi
 
 printf "%s\n" "${PIDs[@]}" > $PIDFILE
 
-echo "Done."
+if [ $alwaysRun != true ]; then
+  while true;
+  do
+    if [ "$(xdotool getwindowfocus getwindowname)" == "i3" ] && [ $isPlaying == false ]; then
+      pause_video
+      isPlaying=true
+    elif [ "$(xdotool getwindowfocus getwindowname)" != "i3" ] && [ $isPlaying == true ]; then
+      pause_video
+      isPlaying=false
+    fi
+    sleep 0.5
+  done
+fi

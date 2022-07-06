@@ -39,20 +39,21 @@ Usage:
 ./setup.sh [OPTIONS] [VIDEO,BLUR_GEOMETRY,TIME_STAMP]
 
 Example:
-./setup.sh -a -n -w -b video.mp4 video2.mp4,32x32
+./setup.sh -anwb video.mp4 video2.mp4,32x32
 
 NOTE: The path of the video(s) must be the last parameter!
 
 Options:
-        -a: Always run video wallpaper.
-        -n: Generate a thumbnail by using ffmpeg. It may be useful if you use the built-in system tray of Polybar. (This can fix the background of system tray)
-        -w: Set the generated thumbnail as wallpaper by using feh. It may be useful if you use the built-in system tray of Polybar. (This can fix the background of system tray)
-        -b: Blur the thumbnail. It may be useful if your compositor does not blur the background of the built-in system tray of Polybar.
-        -f: Parameter which is passed to "feh --bg-[paramater]". Available options: center|fill|max|scale|tile (Default: fill)
-        -d: Where the thumbnails is stored. (Default: $HOME/Pictures/i3-video-wallpaper)
-        -h: Display this text.
+    -a: Always run video wallpaper.
+    -n: Generate a thumbnail by using ffmpeg. It may be useful if you use the built-in system tray of Polybar. (This can fix the background of system tray)
+    -w: Set the generated thumbnail as wallpaper by using feh. It may be useful if you use the built-in system tray of Polybar. (This can fix the background of system tray)
+    -b: Blur the thumbnail. It may be useful if your compositor does not blur the background of the built-in system tray of Polybar.
+    -f: Value which is passed to "feh --bg-[value]". Available options: center|fill|max|scale|tile (Default: fill)
+    -d: Where the thumbnails is stored. (Default: $HOME/Pictures/i3-video-wallpaper)
+    -h: Display this text.
 
 EOL
+        exit
         ;;
       ":")
         echo "ERROR: Option $OPTARG requires argument(s)"

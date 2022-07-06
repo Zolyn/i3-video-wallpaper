@@ -3,6 +3,8 @@ Play dynamic wallpapers in i3wm (using XWinWrap and MPV).
 
 Support pausing the video when a window other than the desktop is focused
 
+Support multiple monitors
+
 ## Dependencies
 - xwinwrap-git (AUR)
 - xdotool
@@ -13,24 +15,38 @@ Support pausing the video when a window other than the desktop is focused
 - feh (to set wallpaper)
 - imagemagick (to blur the generated thumbnail)
 
-## Basic Usage
+## Usage
 ```bash
-./setup.sh [-p] [-a false] [-n false] [-w false] [-b false] [-g 16x16] [-f center] [-d $HOME/Pictures/i3-video-wallpaper] [-t 00:00:01] [-h]
+./setup.sh [OPTIONS] [VIDEO,BLUR_GEOMETRY,TIME_STAMP]
 ```
-## Parameters
+- VIDEO: Path to video.
+- BLUR_GEOMETRY: Value which is passed to "convert -blur [value]". (Default: 16x16)
+- TIME_STAMP: The time to generate the thumbnail. (Default: 00:00:01) 
+
+## Examples
+Always play `video.mp4` for **all** monitors.
+```bash
+./setup.sh -a video.mp4
 ```
-$ ./setup.sh -h
-Options:
-        -p: Path to video.
-        -a: Always run video wallpaper. (Default: false)
-        -n: Generate a thumbnail by using ffmpeg. It can fix the background of system tray if you use the built-in system tray of Polybar. (Default: false)
-        -w: Set the generated thumbnail as wallpaper by using feh. It can fix the background of system tray if you use the built-in system tray of Polybar. (Default: false)
-        -b: Blur the thumbnail. It may be useful if your compositor does not blur the background of the built-in system tray of Polybar. (Default: false)
-        -g: Parameter which is passed to "convert -blur [parameter]". (Default: 16x16)
-        -f: Parameter which is passed to "feh --bg-[paramater]". Available options: center|fill|max|scale|tile (Default: center)
-        -d: Where the thumbnails is stored. (Default: $HOME/Pictures/i3-video-wallpaper)
-        -t: The time to generate the thumbnail. (Default: 00:00:01) 
-        -h: Display this text.
+
+Always play `video.mp4`, generate a thumbnail and set the **blurred** thumbnail as wallpaper for all monitors.
+```bash
+./setup.sh -anwb video.mp4
+```
+
+Always play `video.mp4` for **Monitor 1** and `video2.mp4` for **Monitor 2 and beyond**, set `BLUR_GEOMETRY` to `32x32` for the blurred thumbnail of `video2.mp4`, generate thumbnails and set the blurred thumbnails as wallpaper for the monitors.
+```bash
+./setup.sh -anwb video.mp4 video2.mp4,32x32
+```
+## Options
+```
+  -a: Always run video wallpaper.
+  -n: Generate a thumbnail by using ffmpeg. It may be useful if you use the built-in system tray of Polybar. (This can fix the background of system tray)
+  -w: Set the generated thumbnail as wallpaper by using feh. It may be useful if you use the built-in system tray of Polybar. (This can fix the background of system tray)
+  -b: Blur the thumbnail. It may be useful if your compositor does not blur the background of the built-in system tray of Polybar.
+  -f: Value which is passed to "feh --bg-[value]". Available options: center|fill|max|scale|tile (Default: fill)
+  -d: Where the thumbnails is stored. (Default: $HOME/Pictures/i3-video-wallpaper)
+  -h: Display this text.
 ```
 
 ## License

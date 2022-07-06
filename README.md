@@ -1,9 +1,11 @@
 # i3-video-wallpaper
 Play dynamic wallpapers in i3wm (using XWinWrap and MPV).
 
-Support pausing the video when a window other than the desktop is focused
-
-Support multiple monitors
+## Features
+- Support pausing the video when a window other than the desktop is focused
+- Support multiple monitors
+- Support playing multiple videos
+- Generate, blur thumbnails, and set them as wallpaper (to fix some issue with Polybar and Picom)
 
 ## Dependencies
 - xwinwrap-git (AUR)

@@ -20,29 +20,28 @@ declare -a IndexMap=(
   [2]="timeStamp"
 )
 
-while getopts ":anwbf:d:h" arg
-do
-    case "$arg" in
-      "a")
-        alwaysRun=true
-        ;;
-      "n")
-        generateThumbnail=true
-        ;;
-      "w")
-        setWallpaper=true
-        ;;
-      "b")
-        blur=true
-        ;;
-      "f")
-        fit=$OPTARG
-        ;;
-      "d")
-        thumbnailStorePath=$OPTARG
-        ;;
-      "h")
-        cat << EOL
+while getopts ":anwbf:d:h" arg; do
+  case "$arg" in
+  "a")
+    alwaysRun=true
+    ;;
+  "n")
+    generateThumbnail=true
+    ;;
+  "w")
+    setWallpaper=true
+    ;;
+  "b")
+    blur=true
+    ;;
+  "f")
+    fit=$OPTARG
+    ;;
+  "d")
+    thumbnailStorePath=$OPTARG
+    ;;
+  "h")
+    cat <<EOL
 Usage:
 ./setup.sh [OPTIONS] [VIDEO,BLUR_GEOMETRY,TIME_STAMP]
 
@@ -61,21 +60,21 @@ Options:
     -h: Display this text.
 
 EOL
-        exit
-        ;;
-      ":")
-        echo "ERROR: Option $OPTARG requires argument(s)"
-        exit
-        ;;
-      "?")
-        echo "ERROR: Unknown option $OPTARG"
-        exit
-        ;;
-      "*")
-        echo "ERROR: Unknown error while processing options"
-        exit
-        ;;
-    esac
+    exit
+    ;;
+  ":")
+    echo "ERROR: Option $OPTARG requires argument(s)"
+    exit
+    ;;
+  "?")
+    echo "ERROR: Unknown option $OPTARG"
+    exit
+    ;;
+  "*")
+    echo "ERROR: Unknown error while processing options"
+    exit
+    ;;
+  esac
 done
 
 # Remove options
@@ -83,8 +82,8 @@ shift $((OPTIND - 1))
 
 kill_xwinwrap() {
   while read p; do
-    [[ $(ps -p "$p" -o comm=) == "xwinwrap" ]] && kill -9 "$p";
-  done < $PIDFILE
+    [[ $(ps -p "$p" -o comm=) == "xwinwrap" ]] && kill -9 "$p"
+  done <$PIDFILE
   sleep 0.5
 }
 
@@ -98,7 +97,7 @@ play_video() {
 }
 
 pause_video() {
-  for ((i=1; i<=${#Monitors[@]}; i++)); do
+  for ((i = 1; i <= ${#Monitors[@]}; i++)); do
     echo '{"command": ["cycle", "pause"]}' | socat - "/tmp/mpvsocket$i"
   done
 }
@@ -135,9 +134,9 @@ generate_thumbnail_main() {
     local blurGeometry=''
     local timeStamp=''
 
-    readarray -d , -t ParsedValue <<< "$p"
+    readarray -d , -t ParsedValue <<<"$p"
 
-    for ((i=0; i<${#IndexMap[@]}; i++)); do
+    for ((i = 0; i < ${#IndexMap[@]}; i++)); do
       eval "${IndexMap[$i]}=${ParsedValue[$i]}"
     done
 
@@ -164,13 +163,13 @@ parse_and_play() {
   local geometry=$2
   local monitorIndex=$3
 
-  readarray -d , -t ValueArr <<< "$1"
+  readarray -d , -t ValueArr <<<"$1"
 
-  for ((i=0; i<${#ValueArr[@]}; i++)); do
+  for ((i = 0; i < ${#ValueArr[@]}; i++)); do
     ValueArr[$i]=$(trim "${ValueArr[$i]}")
   done
 
-  for ((i=0; i<${#IndexMap[@]}; i++)); do
+  for ((i = 0; i < ${#IndexMap[@]}; i++)); do
     if [ -n "${ValueArr[$i]}" ]; then
       eval "${IndexMap[$i]}=${ValueArr[$i]}"
     fi
@@ -188,7 +187,7 @@ main() {
     Monitors+=("$g")
     local value
     value=$(eval echo "\$${#Monitors[@]}")
-    
+
     if [ -z "$value" ]; then
       value=$(eval echo "\$$#")
     fi
@@ -196,19 +195,18 @@ main() {
     parse_and_play "$value" "$g" "${#Monitors[@]}"
   done
 
-  printf "%s\n" "${PIDs[@]}" > $PIDFILE
+  printf "%s\n" "${PIDs[@]}" >$PIDFILE
 
   if [ $generateThumbnail == true ]; then
-      generate_thumbnail_main
+    generate_thumbnail_main
   fi
 
   if [ $setWallpaper == true ]; then
-      feh "--bg-$fit" "${ThumbnailList[@]}"
+    feh "--bg-$fit" "${ThumbnailList[@]}"
   fi
 
   if [ $alwaysRun != true ]; then
-    while true;
-    do
+    while true; do
       if [ "$(xdotool getwindowfocus getwindowname)" == "i3" ] && [ $isPlaying == false ]; then
         pause_video
         isPlaying=true

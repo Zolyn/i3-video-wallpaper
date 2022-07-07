@@ -6,11 +6,19 @@ blur=false
 fit='fill'
 thumbnailStorePath="$HOME/Pictures/i3-video-wallpaper"
 
+isPlaying=false
+
 PIDFILE="/var/run/user/$UID/vwp.pid"
 
 declare -a PIDs
 declare -a Monitors
-declare -a thumbnailList
+declare -a ThumbnailList
+declare -a ParsedValueList
+declare -a IndexMap=(
+  [0]="video"
+  [1]="blurGeometry"
+  [2]="timeStamp"
+)
 
 while getopts ":anwbf:d:h" arg
 do
@@ -80,11 +88,10 @@ kill_xwinwrap() {
   sleep 0.5
 }
 
-play() {
+play_video() {
   if [ $alwaysRun == true ]; then
     xwinwrap -ov -ni -g "$1" -- mpv --fs --loop-file --no-audio --no-osc --no-osd-bar -wid WID --no-input-default-bindings "$2" &
   else
-    isPlaying=false
     xwinwrap -ov -ni -g "$1" -- mpv --fs --loop-file --input-ipc-server="/tmp/mpvsocket$3" --pause --no-audio --no-osc --no-osd-bar -wid WID --no-input-default-bindings "$2" &
   fi
   PIDs+=($!)
@@ -97,12 +104,14 @@ pause_video() {
 }
 
 generate_thumbnail() {
-  video=$1
-  timeStamp=$2
-  blurGeometry=$3
+  local video=$1
+  local timeStamp=$2
+  local blurGeometry=$3
 
+  local videoName
   videoName="$(basename "$video" ".${video##*.}")"
-  thumbnailPath="$thumbnailStorePath/$videoName.png"
+  local thumbnailPath="$thumbnailStorePath/$videoName.png"
+  local blurredThumbnailPath
 
   if [ ! -d "$thumbnailStorePath" ]; then
     mkdir -p "$thumbnailStorePath"
@@ -116,7 +125,24 @@ generate_thumbnail() {
     thumbnailPath=$blurredThumbnailPath
   fi
 
-  thumbnailList+=("$thumbnailPath")
+  ThumbnailList+=("$thumbnailPath")
+}
+
+generate_thumbnail_main() {
+  for p in "${ParsedValueList[@]}"; do
+    declare -a ParsedValue
+    local video=''
+    local blurGeometry=''
+    local timeStamp=''
+
+    readarray -d , -t ParsedValue <<< "$p"
+
+    for ((i=0; i<${#IndexMap[@]}; i++)); do
+      eval "${IndexMap[$i]}=${ParsedValue[$i]}"
+    done
+
+    generate_thumbnail "$video" "$timeStamp" "$blurGeometry"
+  done
 }
 
 check_if_video_exists() {
@@ -130,19 +156,13 @@ trim() {
   echo "$1" | grep -o "[^ ]\+\( \+[^ ]\+\)*"
 }
 
-main() {
-  video=''
-  blurGeometry='16x16'
-  timeStamp='00:00:01'
-  geometry=$2
-  monitorIndex=$3
-
-  declare -a IndexMap;
-  IndexMap=(
-    [0]="video"
-    [1]="blurGeometry"
-    [2]="timeStamp"
-  )
+parse_and_play() {
+  declare -a ValueArr
+  local video=''
+  local blurGeometry='16x16'
+  local timeStamp='00:00:01'
+  local geometry=$2
+  local monitorIndex=$3
 
   readarray -d , -t ValueArr <<< "$1"
 
@@ -158,10 +178,46 @@ main() {
 
   check_if_video_exists "$video"
 
-  play "$geometry" "$video" "$monitorIndex"
+  play_video "$geometry" "$video" "$monitorIndex"
+
+  ParsedValueList+=("$video,$blurGeometry,$timeStamp")
+}
+
+main() {
+  for g in $(xrandr -q | grep 'connected' | grep -oP '\d+x\d+\+\d+\+\d+'); do
+    Monitors+=("$g")
+    local value
+    value=$(eval echo "\$${#Monitors[@]}")
+    
+    if [ -z "$value" ]; then
+      value=$(eval echo "\$$#")
+    fi
+
+    parse_and_play "$value" "$g" "${#Monitors[@]}"
+  done
+
+  printf "%s\n" "${PIDs[@]}" > $PIDFILE
 
   if [ $generateThumbnail == true ]; then
-    generate_thumbnail "$video" "$timeStamp" "$blurGeometry"
+      generate_thumbnail_main
+  fi
+
+  if [ $setWallpaper == true ]; then
+      feh "--bg-$fit" "${ThumbnailList[@]}"
+  fi
+
+  if [ $alwaysRun != true ]; then
+    while true;
+    do
+      if [ "$(xdotool getwindowfocus getwindowname)" == "i3" ] && [ $isPlaying == false ]; then
+        pause_video
+        isPlaying=true
+      elif [ "$(xdotool getwindowfocus getwindowname)" != "i3" ] && [ $isPlaying == true ]; then
+        pause_video
+        isPlaying=false
+      fi
+      sleep 0.5
+    done
   fi
 }
 
@@ -171,34 +227,4 @@ if [ -z "$*" ]; then
 fi
 
 kill_xwinwrap
-
-for g in $(xrandr -q | grep 'connected' | grep -oP '\d+x\d+\+\d+\+\d+'); do
-  Monitors+=("$g")
-  value=$(eval echo "\$${#Monitors[@]}")
-  
-  if [ -z "$value" ]; then
-    value=$(eval echo "\$${#@}")
-  fi
-
-  main "$value" "$g" "${#Monitors[@]}"
-done
-
-printf "%s\n" "${PIDs[@]}" > $PIDFILE
-
-if [ $setWallpaper == true ]; then
-    feh "--bg-$fit" "${thumbnailList[@]}"
-fi
-
-if [ $alwaysRun != true ]; then
-  while true;
-  do
-    if [ "$(xdotool getwindowfocus getwindowname)" == "i3" ] && [ $isPlaying == false ]; then
-      pause_video
-      isPlaying=true
-    elif [ "$(xdotool getwindowfocus getwindowname)" != "i3" ] && [ $isPlaying == true ]; then
-      pause_video
-      isPlaying=false
-    fi
-    sleep 0.5
-  done
-fi
+main "$@"

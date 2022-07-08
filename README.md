@@ -22,8 +22,8 @@ Play dynamic wallpapers in i3wm (using XWinWrap and MPV).
 ./setup.sh [OPTIONS] [VIDEO,BLUR_GEOMETRY,TIME_STAMP]
 ```
 - VIDEO: Path to video.
-- BLUR_GEOMETRY: Value which is passed to `convert -blur [value]`. (Default: 16x16)
-- TIME_STAMP: The time to generate the thumbnail. (Default: 00:00:01) 
+- BLUR_GEOMETRY: Value which is passed to `convert -blur [value]`. (Default: `16x16`)
+- TIME_STAMP: The time to generate the thumbnail. (Default: `00:00:01`) 
 
 ## Examples
 Always play `video.mp4` for **all** monitors.

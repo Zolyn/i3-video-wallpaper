@@ -102,32 +102,55 @@ pause_video() {
   done
 }
 
-generate_thumbnail() {
+check_if_file_exists() {
+  local path=$1
+
+  if [ -f "$path" ];then
+    echo "true"
+  else
+    echo "false"
+  fi
+}
+
+generate_thumbnail_if_not_exists() {
+  local video=$1
+  local timeStamp=$2
+  local thumbnailPath=$3
+
+  if [ "$(check_if_file_exists "$thumbnailPath")" == false ];then
+    ffmpeg -i "$video" -y -f image2 -ss "$timeStamp" -vframes 1 "$thumbnailPath"
+  fi
+}
+
+generate_thumbnail_main() {
   local video=$1
   local timeStamp=$2
   local blurGeometry=$3
 
   local videoName
   videoName="$(basename "$video" ".${video##*.}")"
-  local thumbnailPath="$thumbnailStorePath/$videoName.png"
-  local blurredThumbnailPath
+  local thumbnail="$thumbnailStorePath/$videoName"
+  local thumbnailPath="$thumbnail.png"
+  local blurredThumbnailPath="$thumbnail-blurred-$blurGeometry.png"
 
   if [ ! -d "$thumbnailStorePath" ]; then
     mkdir -p "$thumbnailStorePath"
   fi
 
-  ffmpeg -i "$video" -y -f image2 -ss "$timeStamp" -vframes 1 "$thumbnailPath"
-
   if [ $blur == true ]; then
-    blurredThumbnailPath="$thumbnailStorePath/$videoName-blurred.png"
-    convert "$thumbnailPath" -blur "$blurGeometry" "$blurredThumbnailPath"
+    if [ "$(check_if_file_exists "$blurredThumbnailPath")" == false ];then
+      generate_thumbnail_if_not_exists "$video" "$timeStamp" "$thumbnailPath"
+      convert "$thumbnailPath" -blur "$blurGeometry" "$blurredThumbnailPath"
+    fi
     thumbnailPath=$blurredThumbnailPath
+  else
+    generate_thumbnail_if_not_exists "$video" "$timeStamp" "$thumbnailPath"
   fi
 
   ThumbnailList+=("$thumbnailPath")
 }
 
-generate_thumbnail_main() {
+generate_all_thumbnail() {
   for p in "${ParsedValueList[@]}"; do
     declare -a ParsedValue
     local video=''
@@ -140,13 +163,15 @@ generate_thumbnail_main() {
       eval "${IndexMap[$i]}=${ParsedValue[$i]}"
     done
 
-    generate_thumbnail "$video" "$timeStamp" "$blurGeometry"
+    generate_thumbnail_main "$video" "$timeStamp" "$blurGeometry"
   done
 }
 
 check_if_video_exists() {
-  if [ ! -f "$1" ]; then
-    echo "ERROR: The video path $1 is empty."
+  local videoPath=$1
+
+  if [ "$(check_if_file_exists "$videoPath")" == false ];then
+    echo "ERROR: The video path $videoPath is empty."
     exit
   fi
 }
@@ -198,7 +223,7 @@ main() {
   printf "%s\n" "${PIDs[@]}" >$PIDFILE
 
   if [ $generateThumbnail == true ]; then
-    generate_thumbnail_main
+    generate_all_thumbnail
   fi
 
   if [ $setWallpaper == true ]; then
